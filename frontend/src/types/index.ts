@@ -22,6 +22,12 @@ export interface Task {
   created_at: string;
 }
 
+export interface TaskCreate {
+  name: string;
+  duration_minutes: number;
+  priority: Priority;
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;

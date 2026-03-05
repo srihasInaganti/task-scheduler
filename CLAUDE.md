@@ -22,7 +22,8 @@ task-placer/
 │       │   ├── __init__.py
 │       │   ├── google_oauth.py
 │       │   ├── google_calendar.py
-│       │   └── scheduler.py
+│       │   ├── scheduler.py
+│       │   └── ai.py
 │       └── routers/
 │           ├── __init__.py
 │           ├── auth.py
@@ -241,43 +242,119 @@ Update `DashboardPage.tsx` to replace the placeholder with actual CalendarView.
 
 ---
 
-## Phase 6: Scheduling Algorithm
+## Phase 6: Dual-Mode Scheduling (Normal + AI)
 
-The core feature — greedy task placement into free calendar slots.
+The core feature — two scheduling modes: a deterministic greedy algorithm (Normal) and an LLM-powered smart scheduler (AI).
 
-**Backend:**
-- `backend/app/services/scheduler.py`:
-  - `find_free_slots(events, day_start_hour, day_end_hour, start_date, end_date, timezone)`:
-    - For each day in range, create availability window (day_start_hour to day_end_hour)
-    - Subtract all busy events (from Google Calendar)
-    - Return list of `(start_datetime, end_datetime)` free gaps
-  - `run_greedy_schedule(tasks, free_slots)`:
-    - Sort tasks by priority (high=0, medium=1, low=2), then by created_at (oldest first)
-    - For each task, find first free slot where task fits (duration_minutes <= slot duration)
-    - Place task at start of that slot, split remaining slot time
-    - Return (scheduled_tasks_with_times, unscheduled_tasks)
-- `backend/app/routers/schedule.py`:
-  - `POST /schedule/run`:
-    - Fetch unscheduled tasks for current user
-    - Fetch Google Calendar events for next 7 days
-    - Run scheduling algorithm
-    - For each scheduled task: create Google Calendar event, update task in DB (is_scheduled=True, scheduled_start, scheduled_end, google_event_id)
-    - Return ScheduleResultResponse
-  - `DELETE /schedule/clear`:
-    - For all scheduled tasks of current user: delete Google Calendar event, reset task (is_scheduled=False, scheduled_start=None, scheduled_end=None, google_event_id=None)
-    - Return success message
+### Prerequisites — Model & Schema Updates
 
-**Frontend:**
-- `src/api/schedule.ts` — `runSchedule()` → POST /schedule/run, `clearSchedule()` → DELETE /schedule/clear
-- `src/components/ScheduleButton.tsx`:
+**Backend dependency:**
+- `backend/requirements.txt` — add `groq`
+
+**Config:**
+- `backend/app/config.py` — add `GROQ_API_KEY: str = ""` to Settings
+- `backend/.env` + `.env.example` — add `GROQ_API_KEY=your-groq-api-key`
+
+**Model changes** (`backend/app/models.py`):
+- `User` — add `scheduling_mode` (String, default `"normal"`)
+- `Task` — add `context` (String, nullable) — free-text description used by AI mode
+
+**Schema changes** (`backend/app/schemas.py`):
+- `TaskCreate` — make `duration_minutes` and `priority` Optional (default None), add `context: str | None = None`
+- `TaskResponse` — add `context`
+- `UserSettings` — add `scheduling_mode: str` (validated: "normal" | "ai")
+- `UserResponse` — add `scheduling_mode`
+
+**Startup migration** (`backend/app/main.py`):
+- In the startup event, after `create_all`, run ALTER TABLE statements to add new columns to existing DBs (wrap in try/except to ignore "duplicate column" errors):
+  - `ALTER TABLE users ADD COLUMN scheduling_mode VARCHAR DEFAULT 'normal'`
+  - `ALTER TABLE tasks ADD COLUMN context VARCHAR`
+
+### AI Service (`backend/app/services/ai.py`)
+
+- `infer_task_details(task_name: str, context: str | None) -> dict`:
+  - Calls Groq API with model `llama-3.3-70b-versatile` using JSON mode
+  - Prompt: given task name + optional context, infer `duration_minutes` (15/30/45/60/90/120) and `priority` ("high"/"medium"/"low")
+  - Returns `{"duration_minutes": int, "priority": str}`
+  - On any error: falls back to `{"duration_minutes": 30, "priority": "medium"}`
+
+- `ai_schedule_tasks(tasks: list, calendar_events: list, user_settings: dict) -> list`:
+  - Sends to Groq: list of tasks (name, duration, priority, context), busy time slots, user's available hours/timezone
+  - Prompt asks LLM to return JSON array of `{"task_id": int, "start": "ISO8601", "end": "ISO8601"}` placements
+  - LLM considers task context, priority, and optimal time-of-day placement
+  - On any error: falls back to the normal greedy scheduler
+
+### Normal Mode Scheduler (`backend/app/services/scheduler.py`)
+
+Same greedy algorithm as originally designed:
+- `find_free_slots(events, day_start_hour, day_end_hour, start_date, end_date, timezone)`:
+  - For each day in range, create availability window (day_start_hour to day_end_hour)
+  - Subtract all busy events (from Google Calendar)
+  - Return list of `(start_datetime, end_datetime)` free gaps
+- `run_greedy_schedule(tasks, free_slots)`:
+  - Sort tasks by priority (high=0, medium=1, low=2), then by created_at (oldest first)
+  - For each task, find first free slot where task fits (duration_minutes <= slot duration)
+  - Place task at start of that slot, split remaining slot time
+  - Return (scheduled_tasks_with_times, unscheduled_tasks)
+
+### Schedule Router (`backend/app/routers/schedule.py`)
+
+- `POST /schedule/run`:
+  - Fetch unscheduled tasks for current user
+  - Fetch Google Calendar events for next 7 days
+  - **Branch on `current_user.scheduling_mode`:**
+    - `"normal"` → use greedy scheduler (`find_free_slots` + `run_greedy_schedule`)
+    - `"ai"` → use `ai_schedule_tasks()`, which falls back to greedy on error
+  - For each scheduled task: create Google Calendar event, update task in DB (is_scheduled=True, scheduled_start, scheduled_end, google_event_id)
+  - Return ScheduleResultResponse
+- `DELETE /schedule/clear`:
+  - For all scheduled tasks of current user: delete Google Calendar event, reset task (is_scheduled=False, scheduled_start=None, scheduled_end=None, google_event_id=None)
+  - Return success message
+
+### Task Router Update (`backend/app/routers/tasks.py`)
+
+- `POST /tasks/` — after receiving TaskCreate:
+  - If `current_user.scheduling_mode == "ai"` and (`duration_minutes` is None or `priority` is None):
+    - Call `infer_task_details(name, context)` to fill in missing fields
+  - If Normal mode: `duration_minutes` and `priority` are required (return 422 if missing)
+
+### Auth Router Update (`backend/app/routers/auth.py`)
+
+- `PUT /auth/settings` — also handle `scheduling_mode` field from UserSettings
+
+### Frontend Changes
+
+**Types** (`src/types/index.ts`):
+```typescript
+export type SchedulingMode = "normal" | "ai";
+export interface User { /* existing fields */ scheduling_mode: SchedulingMode; }
+export interface Task { /* existing fields */ context: string | null; }
+export interface TaskCreate { name: string; duration_minutes?: number; priority?: Priority; context?: string; }
+```
+
+**TaskForm.tsx** — conditional rendering based on user's scheduling mode:
+- Normal mode: shows name + duration select + priority select (as before)
+- AI mode: shows name + context textarea (optional, placeholder: "Add details to help AI schedule better..."). Duration and priority selects are hidden.
+
+**TaskItem.tsx** — if task has `context`, show a small "AI" badge or indicator
+
+**DashboardPage.tsx** — show current mode indicator (e.g., "AI Mode" badge near the schedule button area)
+
+**api/auth.ts** — include `scheduling_mode` in the UserSettings type sent to `updateSettings()`
+
+**Schedule UI** (`src/api/schedule.ts`, `src/components/ScheduleButton.tsx`):
+- Same as original design:
+  - `runSchedule()` → POST /schedule/run, `clearSchedule()` → DELETE /schedule/clear
   - Two buttons: "Schedule Tasks" (primary) and "Clear Schedule" (secondary/danger)
   - Loading spinner while running
-  - On success: shows result message (e.g., "3 tasks scheduled, 1 could not fit"), triggers parent refetch of tasks and calendar events
+  - On success: shows result message, triggers parent refetch of tasks and calendar events
   - On error: shows error message
 
 Update `DashboardPage.tsx` to include ScheduleButton and refetch both tasks and calendar events after scheduling.
 
-**Verify:** Create tasks, click Schedule, verify events appear in CalendarView (blue) and in Google Calendar (prefixed "[Task Placer]"). Click Clear Schedule, verify events removed.
+**Verify:**
+- Normal mode: Create tasks with duration/priority, click Schedule, verify events appear in CalendarView and Google Calendar. Clear Schedule removes them.
+- AI mode: Switch to AI in Settings. Create task with just a name (+ optional context). Verify duration/priority are auto-inferred. Click Schedule, verify AI-placed events appear correctly. If Groq fails, verify fallback to greedy scheduling works.
 
 ---
 
@@ -285,8 +362,11 @@ Update `DashboardPage.tsx` to include ScheduleButton and refetch both tasks and 
 
 - `src/pages/SettingsPage.tsx`:
   - Form with: available start hour (dropdown 0-23), available end hour (dropdown 0-23), timezone (common timezone select)
+  - **Scheduling mode toggle:** radio buttons for "Normal" and "AI-Powered" with description text:
+    - Normal: "Greedy algorithm — schedules by priority, fills earliest available slots"
+    - AI-Powered: "LLM-powered — infers task duration/priority and optimizes placement intelligently"
   - Save button calls updateSettings(), shows success toast/message
-  - Pre-fills with current user settings
+  - Pre-fills with current user settings (including scheduling_mode)
 - Update Navbar to include Settings link (gear icon or text)
 - Root `.gitignore`:
   ```
@@ -306,16 +386,25 @@ Update `DashboardPage.tsx` to include ScheduleButton and refetch both tasks and 
 
 ## End-to-End Verification
 
+### Normal Mode
 1. Start backend: `cd backend && uvicorn app.main:app --reload`
 2. Start frontend: `cd frontend && npm run dev`
 3. Open `http://localhost:5173`, click "Sign in with Google"
 4. Complete OAuth, verify redirect back to dashboard
-5. Go to Settings, set available hours (e.g., 9-17)
+5. Go to Settings, set available hours (e.g., 9-17), ensure mode is "Normal"
 6. Create 3-4 tasks with different priorities and durations
 7. Click "Schedule Tasks"
 8. Verify: tasks appear on CalendarView in blue, highest priority tasks get earliest slots
 9. Check Google Calendar — events prefixed "[Task Placer]" are present
 10. Click "Clear Schedule", verify events removed from both UI and Google Calendar
+
+### AI Mode
+11. Go to Settings, switch to "AI-Powered" mode, save
+12. Create a task with just a name (e.g., "Write quarterly report") and optional context
+13. Verify: duration and priority are auto-inferred by the AI (visible on TaskItem)
+14. Click "Schedule Tasks"
+15. Verify: AI-placed events appear on CalendarView and Google Calendar
+16. Clear Schedule, verify cleanup works the same
 
 ---
 
@@ -342,5 +431,7 @@ npm run dev
 - Google OAuth tokens (access_token, refresh_token) are stored per-user in the DB, refreshed automatically via `get_valid_credentials()`
 - The scheduler looks 7 days ahead by default
 - Calendar events created by the app are prefixed with "[Task Placer] " for easy identification
-- SQLite is used for simplicity — no migrations needed, tables auto-created on startup
+- SQLite is used for simplicity — tables auto-created on startup, new columns added via ALTER TABLE with try/except for idempotency
 - CORS is configured for localhost:5173 only
+- **Dual scheduling modes:** Users choose between "normal" (greedy algorithm) and "ai" (Groq LLM-powered) in Settings. The mode is stored on the User model and affects both task creation (AI infers duration/priority) and scheduling (AI optimizes placement). AI mode always falls back to the greedy scheduler on error, ensuring reliability.
+- **Groq API:** Used for AI mode via `llama-3.3-70b-versatile` model with JSON mode. Requires `GROQ_API_KEY` in `.env`. The AI service is isolated in `backend/app/services/ai.py` with graceful fallbacks throughout.

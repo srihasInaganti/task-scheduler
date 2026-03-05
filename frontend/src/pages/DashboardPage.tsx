@@ -1,19 +1,53 @@
+import { useCallback, useEffect, useState } from "react";
+import { getTasks } from "../api/tasks";
+import type { Task } from "../types";
+import TaskForm from "../components/TaskForm";
+import TaskList from "../components/TaskList";
+import CalendarView from "../components/CalendarView";
+
 export default function DashboardPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      const data = await getTasks();
+      setTasks(data);
+    } catch {
+      // handled by axios interceptor for 401
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    await fetchTasks();
+    setCalendarRefreshKey((k) => k + 1);
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel — Tasks */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Tasks</h2>
-          <p className="text-gray-500">Task management coming in Phase 4.</p>
+          <TaskForm onTaskCreated={refreshAll} />
+          {loading ? (
+            <p className="text-gray-400 text-sm text-center py-4">Loading tasks...</p>
+          ) : (
+            <TaskList tasks={tasks} onUpdated={refreshAll} />
+          )}
         </div>
 
         {/* Right panel — Calendar */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Calendar</h2>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center text-gray-400">
-            Calendar coming soon
-          </div>
+          <CalendarView refreshKey={calendarRefreshKey} />
         </div>
       </div>
     </div>
