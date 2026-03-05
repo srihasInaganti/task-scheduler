@@ -296,7 +296,7 @@ Update `DashboardPage.tsx` to include ScheduleButton and refetch both tasks and 
   node_modules/
   *.db
   dist/
-  .venv/
+  venv/
   ```
 - Add loading spinners for all async operations (task CRUD, calendar fetch, scheduling)
 - Add error handling: try/catch around all API calls, display user-friendly error messages
@@ -324,8 +324,8 @@ Update `DashboardPage.tsx` to include ScheduleButton and refetch both tasks and 
 ```bash
 # Backend
 cd backend
-python -m venv .venv
-source .venv/bin/activate
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 

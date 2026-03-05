@@ -25,7 +25,7 @@ _pkce_store: dict[str, str] = {}
 
 def create_jwt(user_id: int) -> str:
     expire = datetime.utcnow() + timedelta(days=7)
-    return jwt.encode({"sub": user_id, "exp": expire}, settings.JWT_SECRET_KEY, algorithm="HS256")
+    return jwt.encode({"sub": str(user_id), "exp": expire}, settings.JWT_SECRET_KEY, algorithm="HS256")
 
 
 def _generate_pkce():
