@@ -20,6 +20,7 @@ class User(Base):
     available_start_hour = Column(Integer, default=9)
     available_end_hour = Column(Integer, default=17)
     timezone = Column(String, default="America/New_York")
+    scheduling_mode = Column(String, default="normal")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -38,6 +39,7 @@ class Task(Base):
     scheduled_start = Column(DateTime, nullable=True)
     scheduled_end = Column(DateTime, nullable=True)
     google_event_id = Column(String, nullable=True)
+    context = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

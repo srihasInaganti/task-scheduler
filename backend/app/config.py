@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./taskplacer.db"
     FRONTEND_URL: str = "http://localhost:5173"
     REDIRECT_URI: str = "http://localhost:8000/auth/callback"
+    GROQ_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

@@ -25,11 +25,29 @@ def create_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    duration = task_data.duration_minutes
+    priority = task_data.priority
+
+    if current_user.scheduling_mode == "ai" and (duration is None or priority is None):
+        from app.services.ai import infer_task_details
+
+        inferred = infer_task_details(task_data.name, task_data.context)
+        if duration is None:
+            duration = inferred["duration_minutes"]
+        if priority is None:
+            priority = inferred["priority"]
+    else:
+        if duration is None:
+            duration = 30
+        if priority is None:
+            priority = "medium"
+
     task = Task(
         user_id=current_user.id,
         name=task_data.name,
-        duration_minutes=task_data.duration_minutes,
-        priority=task_data.priority,
+        duration_minutes=duration,
+        priority=priority,
+        context=task_data.context,
     )
     db.add(task)
     db.commit()

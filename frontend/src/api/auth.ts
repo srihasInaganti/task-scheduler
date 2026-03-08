@@ -1,10 +1,11 @@
 import client from "./client";
-import type { User } from "../types";
+import type { User, SchedulingMode } from "../types";
 
 interface UserSettings {
   available_start_hour: number;
   available_end_hour: number;
   timezone: string;
+  scheduling_mode?: SchedulingMode;
 }
 
 export async function getLoginUrl(): Promise<string> {

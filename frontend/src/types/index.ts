@@ -1,4 +1,5 @@
 export type Priority = "high" | "medium" | "low";
+export type SchedulingMode = "normal" | "ai";
 
 export interface User {
   id: number;
@@ -8,6 +9,7 @@ export interface User {
   available_start_hour: number;
   available_end_hour: number;
   timezone: string;
+  scheduling_mode: SchedulingMode;
 }
 
 export interface Task {
@@ -19,13 +21,15 @@ export interface Task {
   scheduled_start: string | null;
   scheduled_end: string | null;
   google_event_id: string | null;
+  context: string | null;
   created_at: string;
 }
 
 export interface TaskCreate {
   name: string;
-  duration_minutes: number;
-  priority: Priority;
+  duration_minutes?: number;
+  priority?: Priority;
+  context?: string;
 }
 
 export interface CalendarEvent {

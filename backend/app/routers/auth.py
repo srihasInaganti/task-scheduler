@@ -125,6 +125,8 @@ def update_settings(
     current_user.available_start_hour = body.available_start_hour
     current_user.available_end_hour = body.available_end_hour
     current_user.timezone = body.timezone
+    if body.scheduling_mode is not None:
+        current_user.scheduling_mode = body.scheduling_mode
     db.commit()
     db.refresh(current_user)
     return current_user

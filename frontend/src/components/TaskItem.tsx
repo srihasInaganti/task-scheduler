@@ -125,6 +125,11 @@ export default function TaskItem({ task, onUpdated }: TaskItemProps) {
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityStyles[task.priority]}`}>
           {task.priority}
         </span>
+        {task.context && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+            AI
+          </span>
+        )}
       </div>
       <div className="flex gap-1">
         <button

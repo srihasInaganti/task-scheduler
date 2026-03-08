@@ -12,6 +12,7 @@ class UserResponse(BaseModel):
     available_start_hour: int
     available_end_hour: int
     timezone: str
+    scheduling_mode: str
 
     class Config:
         from_attributes = True
@@ -21,12 +22,14 @@ class UserSettings(BaseModel):
     available_start_hour: int
     available_end_hour: int
     timezone: str
+    scheduling_mode: Optional[Literal["normal", "ai"]] = None
 
 
 class TaskCreate(BaseModel):
     name: str
-    duration_minutes: int
-    priority: Literal["high", "medium", "low"]
+    duration_minutes: Optional[int] = None
+    priority: Optional[Literal["high", "medium", "low"]] = None
+    context: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -49,6 +52,7 @@ class TaskResponse(BaseModel):
     scheduled_start: Optional[datetime]
     scheduled_end: Optional[datetime]
     google_event_id: Optional[str]
+    context: Optional[str]
     created_at: datetime
 
     class Config:
