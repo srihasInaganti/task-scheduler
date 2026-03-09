@@ -11,6 +11,12 @@ export default function SettingsPage() {
   const [schedulingMode, setSchedulingMode] = useState<SchedulingMode>(
     user?.scheduling_mode ?? "normal"
   );
+  const [bufferMinutes, setBufferMinutes] = useState(user?.buffer_minutes ?? 10);
+  const [focusEnabled, setFocusEnabled] = useState(
+    user?.focus_start_hour != null && user?.focus_end_hour != null
+  );
+  const [focusStartHour, setFocusStartHour] = useState(user?.focus_start_hour ?? 9);
+  const [focusEndHour, setFocusEndHour] = useState(user?.focus_end_hour ?? 12);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -24,6 +30,9 @@ export default function SettingsPage() {
         available_end_hour: endHour,
         timezone,
         scheduling_mode: schedulingMode,
+        focus_start_hour: focusEnabled ? focusStartHour : null,
+        focus_end_hour: focusEnabled ? focusEndHour : null,
+        buffer_minutes: bufferMinutes,
       });
       setUser(updated);
       setMessage("Settings saved!");
@@ -105,6 +114,82 @@ export default function SettingsPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Buffer Between Tasks
+          </label>
+          <select
+            value={bufferMinutes}
+            onChange={(e) => setBufferMinutes(Number(e.target.value))}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            {[0, 5, 10, 15, 30].map((m) => (
+              <option key={m} value={m}>
+                {m === 0 ? "No buffer" : `${m} minutes`}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Time gap between consecutive scheduled tasks.
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Focus Time
+            </label>
+            <button
+              type="button"
+              onClick={() => setFocusEnabled(!focusEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                focusEnabled ? "bg-indigo-600" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  focusEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            Reserve a daily window for deep work. High-priority and long tasks get placed here first.
+          </p>
+          {focusEnabled && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs text-gray-500 mb-1">Start</label>
+                <select
+                  value={focusStartHour}
+                  onChange={(e) => setFocusStartHour(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  {hours.map((h) => (
+                    <option key={h} value={h}>
+                      {h.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs text-gray-500 mb-1">End</label>
+                <select
+                  value={focusEndHour}
+                  onChange={(e) => setFocusEndHour(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  {hours.map((h) => (
+                    <option key={h} value={h}>
+                      {h.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

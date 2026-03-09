@@ -13,6 +13,9 @@ class UserResponse(BaseModel):
     available_end_hour: int
     timezone: str
     scheduling_mode: str
+    focus_start_hour: Optional[int]
+    focus_end_hour: Optional[int]
+    buffer_minutes: int
 
     class Config:
         from_attributes = True
@@ -23,6 +26,9 @@ class UserSettings(BaseModel):
     available_end_hour: int
     timezone: str
     scheduling_mode: Optional[Literal["normal", "ai"]] = None
+    focus_start_hour: Optional[int] = None
+    focus_end_hour: Optional[int] = None
+    buffer_minutes: Optional[int] = None
 
 
 class TaskCreate(BaseModel):
@@ -57,6 +63,11 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RescheduleRequest(BaseModel):
+    start: datetime
+    end: datetime
 
 
 class CalendarEventResponse(BaseModel):

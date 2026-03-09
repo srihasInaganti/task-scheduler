@@ -25,6 +25,9 @@ def startup():
         for stmt in [
             "ALTER TABLE users ADD COLUMN scheduling_mode VARCHAR DEFAULT 'normal'",
             "ALTER TABLE tasks ADD COLUMN context VARCHAR",
+            "ALTER TABLE users ADD COLUMN focus_start_hour INTEGER",
+            "ALTER TABLE users ADD COLUMN focus_end_hour INTEGER",
+            "ALTER TABLE users ADD COLUMN buffer_minutes INTEGER DEFAULT 10",
         ]:
             try:
                 conn.execute(text(stmt))

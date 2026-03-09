@@ -6,6 +6,9 @@ interface UserSettings {
   available_end_hour: number;
   timezone: string;
   scheduling_mode?: SchedulingMode;
+  focus_start_hour?: number | null;
+  focus_end_hour?: number | null;
+  buffer_minutes?: number;
 }
 
 export async function getLoginUrl(): Promise<string> {

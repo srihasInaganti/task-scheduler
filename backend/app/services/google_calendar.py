@@ -36,6 +36,19 @@ def create_event(
     return event["id"]
 
 
+def update_event(
+    credentials: Credentials, event_id: str, start: datetime, end: datetime
+) -> None:
+    service = build("calendar", "v3", credentials=credentials)
+    event_body = {
+        "start": {"dateTime": start.isoformat(), "timeZone": "UTC"},
+        "end": {"dateTime": end.isoformat(), "timeZone": "UTC"},
+    }
+    service.events().patch(
+        calendarId="primary", eventId=event_id, body=event_body
+    ).execute()
+
+
 def delete_event(credentials: Credentials, event_id: str) -> None:
     service = build("calendar", "v3", credentials=credentials)
     try:

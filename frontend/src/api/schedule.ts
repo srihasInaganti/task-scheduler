@@ -9,3 +9,11 @@ export async function runSchedule(): Promise<ScheduleResult> {
 export async function clearSchedule(): Promise<void> {
   await client.delete("/schedule/clear");
 }
+
+export async function rescheduleTask(
+  taskId: number,
+  start: string,
+  end: string
+): Promise<void> {
+  await client.put(`/schedule/reschedule/${taskId}`, { start, end });
+}

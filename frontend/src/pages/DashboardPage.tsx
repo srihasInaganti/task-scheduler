@@ -58,7 +58,7 @@ export default function DashboardPage() {
         {/* Right panel — Calendar */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Calendar</h2>
-          <CalendarView refreshKey={calendarRefreshKey} />
+          <CalendarView refreshKey={calendarRefreshKey} onEventRescheduled={fetchTasks} />
         </div>
       </div>
     </div>

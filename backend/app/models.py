@@ -21,6 +21,9 @@ class User(Base):
     available_end_hour = Column(Integer, default=17)
     timezone = Column(String, default="America/New_York")
     scheduling_mode = Column(String, default="normal")
+    focus_start_hour = Column(Integer, nullable=True)
+    focus_end_hour = Column(Integer, nullable=True)
+    buffer_minutes = Column(Integer, default=10)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

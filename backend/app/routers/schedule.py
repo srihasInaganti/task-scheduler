@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
 from app.models import Task, User
-from app.schemas import ScheduleResultResponse, TaskResponse
-from app.services.google_calendar import create_event, delete_event, fetch_events
+from app.schemas import RescheduleRequest, ScheduleResultResponse, TaskResponse
+from app.services.google_calendar import create_event, delete_event, fetch_events, update_event
 from app.services.google_oauth import get_valid_credentials
 from app.services.scheduler import find_free_slots, run_greedy_schedule
 
@@ -94,6 +94,9 @@ def run_schedule(
                     "start_hour": current_user.available_start_hour,
                     "end_hour": current_user.available_end_hour,
                     "timezone": current_user.timezone,
+                    "focus_start_hour": current_user.focus_start_hour,
+                    "focus_end_hour": current_user.focus_end_hour,
+                    "buffer_minutes": current_user.buffer_minutes or 10,
                 },
             )
 
@@ -127,7 +130,13 @@ def run_schedule(
             end_date=time_max,
             timezone=timezone,
         )
-        scheduled_dicts, unscheduled_dicts = run_greedy_schedule(task_dicts, free_slots)
+        scheduled_dicts, unscheduled_dicts = run_greedy_schedule(
+            task_dicts,
+            free_slots,
+            focus_start_hour=current_user.focus_start_hour,
+            focus_end_hour=current_user.focus_end_hour,
+            buffer_minutes=current_user.buffer_minutes,
+        )
 
     # Update DB and create Google Calendar events
     task_map = {t.id: t for t in unscheduled_tasks}
@@ -167,6 +176,36 @@ def run_schedule(
         unscheduled=[TaskResponse.model_validate(t) for t in unscheduled_task_models],
         message=message,
     )
+
+
+@router.put("/reschedule/{task_id}", response_model=TaskResponse)
+def reschedule_task(
+    task_id: int,
+    body: RescheduleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = db.query(Task).filter(Task.id == task_id, Task.user_id == current_user.id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if not task.is_scheduled:
+        raise HTTPException(status_code=400, detail="Task is not scheduled")
+
+    task.scheduled_start = body.start
+    task.scheduled_end = body.end
+    task.duration_minutes = int((body.end - body.start).total_seconds() / 60)
+
+    # Update the Google Calendar event if it exists
+    if task.google_event_id:
+        try:
+            credentials = get_valid_credentials(current_user, db)
+            update_event(credentials, task.google_event_id, body.start, body.end)
+        except Exception as e:
+            logger.warning("Failed to update calendar event for task %s: %s", task.id, e)
+
+    db.commit()
+    db.refresh(task)
+    return task
 
 
 @router.delete("/clear")

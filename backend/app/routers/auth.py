@@ -127,6 +127,11 @@ def update_settings(
     current_user.timezone = body.timezone
     if body.scheduling_mode is not None:
         current_user.scheduling_mode = body.scheduling_mode
+    # focus_start_hour and focus_end_hour can be set to None to disable focus time
+    current_user.focus_start_hour = body.focus_start_hour
+    current_user.focus_end_hour = body.focus_end_hour
+    if body.buffer_minutes is not None:
+        current_user.buffer_minutes = body.buffer_minutes
     db.commit()
     db.refresh(current_user)
     return current_user

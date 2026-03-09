@@ -74,13 +74,20 @@ def ai_schedule_tasks(
                         "calendar events (busy slots), schedule the tasks into available time slots.\n\n"
                         f"User's available hours: {user_settings['start_hour']}:00 to {user_settings['end_hour']}:00\n"
                         f"User's timezone: {user_settings['timezone']}\n"
-                        f"Schedule tasks within the next 7 days starting from today.\n\n"
+                        + (
+                            f"User's FOCUS TIME window: {user_settings['focus_start_hour']}:00 to {user_settings['focus_end_hour']}:00 each day. "
+                            "High-priority tasks and long tasks (>=60 min) should be placed during focus time whenever possible.\n"
+                            if user_settings.get('focus_start_hour') is not None and user_settings.get('focus_end_hour') is not None
+                            else ""
+                        )
+                        + f"Schedule tasks within the next 7 days starting from today.\n\n"
                         "Consider:\n"
                         "- Task priority (high priority tasks should get better time slots)\n"
                         "- Task context/description for optimal time-of-day placement\n"
                         "- Don't overlap with existing calendar events (the busy slots list includes ALL existing events)\n"
-                        "- Leave a 10-minute buffer between each scheduled task and between tasks and existing events\n"
-                        "- Only schedule within the user's available hours\n\n"
+                        f"- Leave a {user_settings.get('buffer_minutes', 10)}-minute buffer between each scheduled task and between tasks and existing events\n"
+                        "- Only schedule within the user's available hours\n"
+                        "- Prefer placing high-priority and long-duration tasks during the focus time window if one is set\n\n"
                         "Respond with ONLY a JSON object: {\"scheduled\": [{\"task_id\": <int>, "
                         "\"start\": \"<ISO8601>\", \"end\": \"<ISO8601>\"}]}\n"
                         "If a task cannot be scheduled, omit it from the list."
