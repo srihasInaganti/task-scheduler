@@ -1,1 +1,255 @@
 @import "tailwindcss";
+
+@theme {
+  --color-lavender-50: #f5f0ff;
+  --color-lavender-100: #ede5ff;
+  --color-lavender-200: #ddd0fe;
+  --color-lavender-300: #c4acfc;
+  --color-lavender-400: #a67ff8;
+  --color-lavender-500: #8b5cf6;
+  --color-lavender-600: #7c3aed;
+  --color-lavender-700: #6d28d9;
+  --color-lavender-800: #5b21b6;
+  --color-lavender-900: #4c1d95;
+  --color-surface: #f0ecf9;
+  --color-card: #ffffff;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s ease-out both;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s ease-out both;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(139, 92, 246, 0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Staggered list animations */
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 50ms; }
+.stagger-item:nth-child(3) { animation-delay: 100ms; }
+.stagger-item:nth-child(4) { animation-delay: 150ms; }
+.stagger-item:nth-child(5) { animation-delay: 200ms; }
+.stagger-item:nth-child(6) { animation-delay: 250ms; }
+.stagger-item:nth-child(7) { animation-delay: 300ms; }
+.stagger-item:nth-child(8) { animation-delay: 350ms; }
+.stagger-item:nth-child(9) { animation-delay: 400ms; }
+.stagger-item:nth-child(10) { animation-delay: 450ms; }
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.1), 0 4px 10px -5px rgba(139, 92, 246, 0.05);
+}
+
+/* Button press effect */
+.btn-press {
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.btn-press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Smooth input focus */
+input, select, textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* FullCalendar theme overrides */
+.fc {
+  --fc-border-color: #e9e2f5;
+  --fc-today-bg-color: rgba(139, 92, 246, 0.04);
+  --fc-now-indicator-color: #8b5cf6;
+  --fc-button-bg-color: #8b5cf6;
+  --fc-button-border-color: #8b5cf6;
+  --fc-button-hover-bg-color: #7c3aed;
+  --fc-button-hover-border-color: #7c3aed;
+  --fc-button-active-bg-color: #6d28d9;
+  --fc-button-active-border-color: #6d28d9;
+  --fc-event-bg-color: #8b5cf6;
+  --fc-event-border-color: #7c3aed;
+  font-family: inherit;
+}
+
+.fc .fc-button {
+  border-radius: 8px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+.fc .fc-button-group > .fc-button {
+  border-radius: 0 !important;
+}
+
+.fc .fc-button-group > .fc-button:first-child {
+  border-radius: 8px 0 0 8px !important;
+}
+
+.fc .fc-button-group > .fc-button:last-child {
+  border-radius: 0 8px 8px 0 !important;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: #1e1b4b;
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  padding: 8px 4px !important;
+}
+
+.fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.fc .fc-event {
+  border-radius: 6px !important;
+  border: none !important;
+  padding: 2px 6px !important;
+  font-size: 0.8rem !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-width: 2px;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9e2f5 !important;
+}
+
+.fc td, .fc th {
+  border-color: #f0ecf9 !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #d4ccec;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b8aed6;
+}
+
+/* Calendar event pop-in animation */
+@keyframes eventPopIn {
+  0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+  50% { opacity: 1; transform: scale(1.08) translateY(-2px); }
+  70% { transform: scale(0.95) translateY(1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.fc-event-pop-in {
+  animation: eventPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             eventGlow 0.8s ease-out 0.5s both;
+}
+
+/* Stagger event pop-in per event */
+.fc-event-pop-in[data-pop-delay="0"] { animation-delay: 0ms, 0.5s; }
+.fc-event-pop-in[data-pop-delay="1"] { animation-delay: 80ms, 0.58s; }
+.fc-event-pop-in[data-pop-delay="2"] { animation-delay: 160ms, 0.66s; }
+.fc-event-pop-in[data-pop-delay="3"] { animation-delay: 240ms, 0.74s; }
+.fc-event-pop-in[data-pop-delay="4"] { animation-delay: 320ms, 0.82s; }
+.fc-event-pop-in[data-pop-delay="5"] { animation-delay: 400ms, 0.9s; }
+.fc-event-pop-in[data-pop-delay="6"] { animation-delay: 480ms, 0.98s; }
+.fc-event-pop-in[data-pop-delay="7"] { animation-delay: 560ms, 1.06s; }
+.fc-event-pop-in[data-pop-delay="8"] { animation-delay: 640ms, 1.14s; }
+.fc-event-pop-in[data-pop-delay="9"] { animation-delay: 720ms, 1.22s; }
+
+/* Brief glow pulse after pop-in */
+@keyframes eventGlow {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+
+/* Task delete pop-out animation */
+@keyframes taskPopOut {
+  0% { opacity: 1; transform: scale(1); }
+  20% { transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(0.5); height: 0; margin: 0; padding: 0; overflow: hidden; }
+}
+
+.task-pop-out {
+  animation: taskPopOut 0.4s cubic-bezier(0.55, 0.06, 0.68, 0.19) both;
+  pointer-events: none;
+}
+
+/* Toast animation */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-enter {
+  animation: toast-in 0.3s ease-out both;
+}

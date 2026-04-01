@@ -50,34 +50,40 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4 mb-4">
-      {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+    <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-lavender-100 shadow-sm p-5">
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm rounded-lg px-3 py-2 mb-3 animate-scale-in border border-red-100">
+          {error}
+        </div>
+      )}
+
       <div className="mb-3">
         <input
           type="text"
-          placeholder="Task name"
+          placeholder="What needs to be done?"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full border border-lavender-200 rounded-lg px-4 py-2.5 text-sm bg-lavender-50/50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400 focus:border-transparent focus:bg-white"
           required
         />
       </div>
+
       {isAI ? (
         <div className="mb-3">
           <textarea
             placeholder="Add details to help AI schedule better... (optional)"
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full border border-lavender-200 rounded-lg px-4 py-2.5 text-sm bg-lavender-50/50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400 focus:border-transparent focus:bg-white resize-none"
             rows={2}
           />
         </div>
       ) : (
-        <div className="flex gap-3 mb-3">
+        <div className="flex gap-2 mb-3">
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-lavender-200 rounded-lg px-3 py-2.5 text-sm bg-lavender-50/50 focus:outline-none focus:ring-2 focus:ring-lavender-400 focus:border-transparent focus:bg-white cursor-pointer"
           >
             <option value={15}>15 min</option>
             <option value={30}>30 min</option>
@@ -89,7 +95,7 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value as Priority)}
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-lavender-200 rounded-lg px-3 py-2.5 text-sm bg-lavender-50/50 focus:outline-none focus:ring-2 focus:ring-lavender-400 focus:border-transparent focus:bg-white cursor-pointer"
           >
             <option value="high">High</option>
             <option value="medium">Medium</option>
@@ -97,12 +103,23 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
           </select>
         </div>
       )}
+
       <button
         type="submit"
         disabled={loading || !name.trim()}
-        className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-gradient-to-r from-lavender-600 to-lavender-700 text-white rounded-lg py-2.5 text-sm font-semibold hover:from-lavender-700 hover:to-lavender-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer btn-press shadow-sm shadow-lavender-300/30 transition-all"
       >
-        {loading ? "Adding..." : "Add Task"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Adding...
+          </span>
+        ) : (
+          "Add Task"
+        )}
       </button>
     </form>
   );

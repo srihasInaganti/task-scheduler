@@ -4,15 +4,20 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-sm w-full text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Placer</h1>
-        <p className="text-gray-500 mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="animate-scale-in bg-card rounded-2xl shadow-lg shadow-lavender-200/50 p-10 max-w-sm w-full text-center border border-lavender-100">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lavender-500 to-lavender-700 flex items-center justify-center mx-auto mb-5 shadow-md shadow-lavender-300/40">
+          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-lavender-900 mb-1.5 tracking-tight">Task Placer</h1>
+        <p className="text-gray-500 mb-8 text-sm leading-relaxed">
           Automatically schedule your tasks around your calendar.
         </p>
         <button
           onClick={login}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 hover:shadow transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 bg-card border border-lavender-200 rounded-xl px-4 py-3.5 text-gray-700 font-medium hover:bg-lavender-50 hover:border-lavender-300 hover:shadow-md transition-all cursor-pointer btn-press"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

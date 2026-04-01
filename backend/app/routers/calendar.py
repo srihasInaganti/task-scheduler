@@ -17,13 +17,32 @@ router = APIRouter(prefix="/calendar", tags=["calendar"])
 
 @router.get("/events", response_model=list[CalendarEventResponse])
 def get_calendar_events(
-    days: int = Query(default=7, ge=1, le=30),
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Parse start/end or default to current week (Sun-Sat)
     now = datetime.utcnow()
-    time_min = now
-    time_max = now + timedelta(days=days)
+    if start:
+        try:
+            time_min = datetime.fromisoformat(start.replace("Z", "+00:00")).replace(tzinfo=None)
+        except ValueError:
+            time_min = now
+    else:
+        # Default: start of current week (Sunday)
+        days_since_sunday = now.weekday() + 1 if now.weekday() != 6 else 0
+        time_min = (now - timedelta(days=days_since_sunday)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if end:
+        try:
+            time_max = datetime.fromisoformat(end.replace("Z", "+00:00")).replace(tzinfo=None)
+        except ValueError:
+            time_max = now + timedelta(days=7)
+    else:
+        # Default: end of current week (Saturday night)
+        days_until_saturday = 5 - now.weekday() if now.weekday() != 6 else 6
+        time_max = (now + timedelta(days=days_until_saturday + 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Fetch Google Calendar events (gracefully handle API errors)
     google_events: list[dict] = []
@@ -41,6 +60,8 @@ def get_calendar_events(
             Task.is_scheduled == True,
             Task.scheduled_start != None,
             Task.scheduled_end != None,
+            Task.scheduled_start < time_max,
+            Task.scheduled_end > time_min,
         )
         .all()
     )
@@ -55,10 +76,10 @@ def get_calendar_events(
         if event_id in task_event_ids:
             continue  # will be added as task_placer source below
 
-        start = ge.get("start", {})
-        end = ge.get("end", {})
-        start_str = start.get("dateTime") or start.get("date", "")
-        end_str = end.get("dateTime") or end.get("date", "")
+        start_val = ge.get("start", {})
+        end_val = ge.get("end", {})
+        start_str = start_val.get("dateTime") or start_val.get("date", "")
+        end_str = end_val.get("dateTime") or end_val.get("date", "")
 
         events.append(
             CalendarEventResponse(
