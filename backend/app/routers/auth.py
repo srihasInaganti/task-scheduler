@@ -1,14 +1,12 @@
-import hashlib
 import logging
 import secrets
 import urllib.parse
-from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
-from jose import jwt
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -19,29 +17,31 @@ from app.services.google_oauth import SCOPES
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# In-memory store for PKCE code verifiers keyed by OAuth state
-_pkce_store: dict[str, str] = {}
-
 
 def create_jwt(user_id: int) -> str:
     expire = datetime.utcnow() + timedelta(days=7)
     return jwt.encode({"sub": str(user_id), "exp": expire}, settings.JWT_SECRET_KEY, algorithm="HS256")
 
 
-def _generate_pkce():
-    """Generate PKCE code_verifier and code_challenge."""
-    code_verifier = secrets.token_urlsafe(64)
-    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
-    code_challenge = urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-    return code_verifier, code_challenge
+def _create_oauth_state() -> str:
+    """Stateless CSRF token: short-lived signed JWT used as the OAuth `state` param."""
+    payload = {
+        "nonce": secrets.token_urlsafe(16),
+        "exp": datetime.utcnow() + timedelta(minutes=10),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm="HS256")
+
+
+def _verify_oauth_state(state: str) -> None:
+    """Raises HTTPException(400) if the state is not a valid, unexpired token we issued."""
+    try:
+        jwt.decode(state, settings.JWT_SECRET_KEY, algorithms=["HS256"])
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
 
 
 @router.get("/login")
 def login():
-    state = secrets.token_urlsafe(32)
-    code_verifier, code_challenge = _generate_pkce()
-    _pkce_store[state] = code_verifier
-
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.REDIRECT_URI,
@@ -49,9 +49,7 @@ def login():
         "scope": " ".join(SCOPES),
         "access_type": "offline",
         "prompt": "consent",
-        "state": state,
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256",
+        "state": _create_oauth_state(),
     }
     auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params)
     return {"url": auth_url}
@@ -59,10 +57,7 @@ def login():
 
 @router.get("/callback")
 def callback(code: str, state: str = Query(default=""), db: Session = Depends(get_db)):
-    # Retrieve the PKCE code_verifier for this state
-    code_verifier = _pkce_store.pop(state, None)
-    if not code_verifier:
-        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+    _verify_oauth_state(state)
 
     token_data = {
         "code": code,
@@ -70,7 +65,6 @@ def callback(code: str, state: str = Query(default=""), db: Session = Depends(ge
         "client_secret": settings.GOOGLE_CLIENT_SECRET,
         "redirect_uri": settings.REDIRECT_URI,
         "grant_type": "authorization_code",
-        "code_verifier": code_verifier,
     }
     token_resp = httpx.post("https://oauth2.googleapis.com/token", data=token_data)
     if token_resp.status_code != 200:
