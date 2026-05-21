@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     REDIRECT_URI: str = "http://localhost:8000/auth/callback"
     GROQ_API_KEY: str = ""
+    # Comma-separated list of additional allowed CORS origins (e.g. preview URLs)
+    EXTRA_CORS_ORIGINS: str = ""
 
     class Config:
         env_file = ".env"
