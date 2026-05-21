@@ -21,11 +21,4 @@ https://task-scheduler-pearl.vercel.app/
 - **Backend:** FastAPI, SQLAlchemy, SQLite
 - **APIs:** Google Calendar API, Groq API (for AI mode)
 
-## Prerequisites
-
-- Python 3.10+
-- Node.js 18+
-- A Google Cloud project with OAuth 2.0 credentials and the Google Calendar API enabled
-- (Optional) A [Groq API key](https://console.groq.com/) for AI scheduling mode
-
 ## Google Sign in Requires user to be added as a test user if interested reach out and I can add you.
